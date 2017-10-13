@@ -131,4 +131,29 @@ ssize_t splice(int fd_in, loff_t* off_in, int fd_out, loff_t* off_out, size_t le
     * `SPLICE_F_MORE` 后续的splice调用将读取更多数据
     * `SPLICE_F_GIFT` 对splice没有效果
 
-    
+
+## tee函数
+
+tee函数在两个管道文件描述符之间复制数据，也是零拷贝操作，不消耗数据，所以源文件描述符上的数据仍然可以用于后续的读操作
+
+```
+#inlcude <fcntl.h>
+ssize_t tee(int fd_in, int fd_out, size_t len, unsigned int flags);
+```
+
+tee函数成功时返回在两个文件描述符之间复制的数据数量。返回0表示没有复制任何数据，tee失败时返回-1并设置errno
+
+## fcntl函数
+
+fcntl函数，正如其名字描述的那样，提供了对文件描述符德各种控制操作。
+
+另外一个常见的控制文件描述符属性和行为的系统调用时ioctl，而ioctl比fcntl能够执行更多的控制。
+
+```
+#include <fcntl.h>
+int fcntl(int fd, int cmd, ...);
+```
+
+fd参数是被操作的文件描述符，cmd参数指定执行何种类型的操作
+
+![fcntl支持的常用操作及其参数](./pic/1.png)
