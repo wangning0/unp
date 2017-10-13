@@ -84,3 +84,51 @@ count参数指定在文件描述符in_fd和out_fd之间传输的字节数。send
 
 in_fd必须是一个支持类似mmap函数的文件描述符，即它必须指向真实的文件，不能是socker和管道，而out_fd则必须是一个socket
 
+## mmap函数和munmap函数
+
+mmap函数用于申请一段内存空间，我们可以将这段内存作为通信的共享内存，也可以将文件直接映射到其中。munmap函数则释放由mmap创建的这段内存空间
+
+```
+#include <sys/mman.h>
+void *mmap(void *start, size_t length, int port, int flags, int fd, off_t offset);
+int munmap(void *start, size_t length);
+```
+
+start参数允许用户使用某个特定的地址作为这段内存的起始地址。如果被设置为NULL，则系统自动分配一个地址。length参数指定内存段的长度，port参数用来设置内存段的访问权限
+
+* PORT_READ 可读
+* PORT_WRITE 可写
+* PORT_EXEC 可执行
+* PORT_NONE 不能被访问
+
+flags参数控制内存段内容被修改后程序的行为
+
+* MAP_SHARED 在进程间共享内存，对该内存段的修改将反映到被映射的文件中
+* MAP_PRIVATE 内存段为调用进程私有
+* MAP_ANONYMOUS  这段内存不是从文件映射而来的
+* MAP_FIXED 必须位于start参数指定的地址处，start必须是内存页面大小(4096)的整数倍
+* MAP_HUGETLB 按照 大内存页面来分配内存空间
+
+fd是文件对应的文件描述符
+
+mmap函数成功时返回指向目标内存区域的指针，失败返回MAP_FAILED((void*)-1)设置errno
+
+## splice函数
+
+splice函数用于在两个文件描述符之间移动数据，也是零拷贝操作
+
+```
+#include <fcntl.h>
+ssize_t splice(int fd_in, loff_t* off_in, int fd_out, loff_t* off_out, size_t len, unsigned int flags);
+```
+
+* `fd_in`参数是待输入数据的文件描述符。如果`fd_in`是一个管道文件描述符，那么`off_in`参数必须被设置为NULL，如果`fd_in`不是一个管道文件描述符，那么`off_in`表示从输入数据流的何处开始读取数据
+* len 参数指定移动数据的长度
+* flags参数则控制数据如何移动
+
+    * `SPLICE_F_MOVE` 如果合适的话，按整页内存移动数据
+    * `SPLICE_F_NONBLOCK` 非阻塞的splice操作，但实际效果还会受文件描述符本身的阻塞状态的影响
+    * `SPLICE_F_MORE` 后续的splice调用将读取更多数据
+    * `SPLICE_F_GIFT` 对splice没有效果
+
+    
